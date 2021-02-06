@@ -1,6 +1,6 @@
 # shellcheck disable=2148,2034
 
-export PS1="[\h|\u]$  "
+#export PS1="[\h|\u]$  "
 
 #-------------------------------------------------------------
 # Random shits
@@ -8,6 +8,7 @@ export PS1="[\h|\u]$  "
 alias rprofile='source ~/.bash_profile'
 alias eprofile='nano ~/.bash_profile'
 alias ehosts='sudo vi /etc/hosts'
+alias catba='cat ~/.bash_aliases'
 
 #-------------------------------------------------------------
 # Move around a little easier/lazier
