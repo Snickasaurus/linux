@@ -13,6 +13,7 @@ alias catba='cat ~/.bash_aliases'
 #-------------------------------------------------------------
 # Move around a little easier/lazier
 #-------------------------------------------------------------
+alias hc='cd ~ && clear'
 alias c='clear'
 alias h='cd ~'
 alias r='cd /'
