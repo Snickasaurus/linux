@@ -107,7 +107,7 @@ now(){
 ii(){
     # Variables
     os_var_1=`lsb_release -d | awk '{print $2,$3,$4}'`
-    os_va_2=`lsb_release -c | awk '{print $2}'`
+    os_var_2=`lsb_release -c | awk '{print $2}'`
     uptyme=`uptime | awk '{print $2,$3,$4,$1 " | " $5,$6}'`
     users=`w -h | awk '{print $1,$2,$3}'`
     # Begin
@@ -115,7 +115,7 @@ ii(){
     hostname
     echo " "
     echo -e "${Red}OS Version $NC"
-    echo $os_var_2 $os_var_3
+    echo $os_var_1 $os_var_2
     echo " "
     echo -e "${Red}Current date $NC"
     date
