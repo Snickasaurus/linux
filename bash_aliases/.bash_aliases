@@ -52,7 +52,7 @@ extract(){
             *.tgz)      tar xvzf "$1"     ;;
             *.zip)      unzip "$1"        ;;
             *.Z)        uncompress "$1"   ;;
-            *.7z)       7z x "$1"         ;;
+            #*.7z)       7z x "$1"         ;;
             *)          echo "'$1' cannot be extracted via >extract<" ;;
         esac
     else
