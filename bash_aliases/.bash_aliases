@@ -1,14 +1,11 @@
-# shellcheck disable=2148,2034
-
-#export PS1="[\h|\u]$  "
-
 #-------------------------------------------------------------
-# Random shits
+# Editing & Viewing
 #-------------------------------------------------------------
-alias rprofile='source ~/.bash_profile'
-alias eprofile='nano ~/.bash_profile'
-alias ehosts='sudo vi /etc/hosts'
 alias catba='cat ~/.bash_aliases'
+alias editba='nano ~/.bash_aliases'
+alias sourceba='source ~/.bash_aliases'
+alias cathosts='cat /etc/hosts'
+alias edithosts='sudo vi /etc/hosts'
 
 #-------------------------------------------------------------
 # Move around a little easier/lazier
@@ -28,7 +25,7 @@ alias dt='cd /data/temp'
 alias paths='echo -e ${PATH//:/\\n}'
 
 #-------------------------------------------------------------
-# The 'ls' family (this assumes you use a recent GNU ls).
+# Listing the directory structure | pretty
 #-------------------------------------------------------------
 alias ll='ls -lhG'
 alias la='ls -alhG'
@@ -108,15 +105,26 @@ now(){
 # Processes and services
 #-------------------------------------------------------------
 ii(){
-    echo -e "${Red}You are logged on: $NC " ; hostname
+    # Variables
+    os_var_1=`lsb_release -d | awk '{print $2,$3,$4}'`
+    os_va_2=`lsb_release -c | awk '{print $2}'`
+    uptyme=`uptime | awk '{print $2,$3,$4,$1 " | " $5,$6}'`
+    users=`w -h | awk '{print $1,$2,$3}'`
+    # Begin
+    echo -e "${Red}You are logged on: $NC"
+    hostname
     echo " "
-    echo -e "${Red}Additionnal information: $NC " ; uname -a
+    echo -e "${Red}OS Version $NC"
+    echo $os_var_2 $os_var_3
     echo " "
-    echo -e "${Red}Users logged on: $NC " ; w -h
+    echo -e "${Red}Current date $NC"
+    date
     echo " "
-    echo -e "${Red}Current date :$NC " ; date
+    echo -e "${Red}Stats $NC"
+    echo $uptyme
     echo " "
-    echo -e "${Red}Machine stats: $NC " ; uptime
+    echo -e "${Red}Users logged on $NC"
+    w -h
     echo " "
 }
 
