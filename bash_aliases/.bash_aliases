@@ -4,8 +4,8 @@
 alias catba='cat ~/.bash_aliases'
 alias editba='nano ~/.bash_aliases'
 alias sourceba='source ~/.bash_aliases'
-alias cathosts='cat /etc/hosts'
-alias edithosts='sudo vi /etc/hosts'
+alias cathos='cat /etc/hosts'
+alias edithos='sudo vi /etc/hosts'
 
 #-------------------------------------------------------------
 # Move around a little easier/lazier
@@ -52,7 +52,7 @@ extract(){
             *.tgz)      tar xvzf "$1"     ;;
             *.zip)      unzip "$1"        ;;
             *.Z)        uncompress "$1"   ;;
-            #*.7z)       7z x "$1"         ;;
+            #*.7z)       p7zip x "$1"         ;;
             *)          echo "'$1' cannot be extracted via >extract<" ;;
         esac
     else
@@ -102,6 +102,14 @@ now(){
 }
 
 #-------------------------------------------------------------
+# Show free space for sda2
+#-------------------------------------------------------------
+space(){
+    free=`df -h | grep -i "/dev/sda2" | awk {'print $5'}`
+    echo "Freespace:  ${free}"
+}
+
+#-------------------------------------------------------------
 # Processes and services
 #-------------------------------------------------------------
 ii(){
@@ -126,6 +134,16 @@ ii(){
     echo -e "${Red}Users logged on $NC"
     w -h
     echo " "
+}
+
+#-------------------------------------------------------------
+# Show open ports x3
+#-------------------------------------------------------------
+whatsopen(){
+    # Variables
+
+    free=`df -h | grep -i "/dev/sda2" | awk {'print $5'}`
+    echo "Freespace:  ${free}"
 }
 
 #-------------------------------------------------------------
