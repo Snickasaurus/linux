@@ -35,6 +35,10 @@ alias lt='ls -ltr'          #  Sort by date, most recent last.
 alias lc='ls -ltcr'         #  Sort by/show change time,most recent last.
 alias lu='ls -ltur'         #  Sort by/show access time,most recent last.
 
+list(){
+    ls -la | grep "^d" && ls -la | grep "^-" && ls -la | grep "^l"
+}
+
 #-------------------------------------------------------------
 # Extraction
 #-------------------------------------------------------------
@@ -65,7 +69,7 @@ extract(){
 #-------------------------------------------------------------
 # Creates an archive (*.tar.gz) from given directory.
 mkgz(){
-    tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"
+    tar cvzf "${1%%/}.tar.gz" "${1%%/}/"
 }
 
 # Creates an archive (*.tar.bz2) from a given directory
