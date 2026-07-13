@@ -1,48 +1,53 @@
-#-------------------------------------------------------------
-# Editing & Viewing
-#-------------------------------------------------------------
-alias catba='cat ~/.bash_aliases'
-alias editba='nano ~/.bash_aliases'
-alias sourceba='source ~/.bash_aliases'
-alias cathos='cat /etc/hosts'
-alias edithos='sudo vi /etc/hosts'
-
-#-------------------------------------------------------------
-# Move around a little easier/lazier
-#-------------------------------------------------------------
-alias hc='cd ~ && clear'
+## Basic stuff
 alias c='clear'
-alias h='cd ~'
-alias r='cd /'
-alias d='cd /data'
-alias dl='cd /data/logs'
-alias ds='cd /data/scripts'
-alias dt='cd /data/temp'
+alias h='cd ~/'
 
-#-------------------------------------------------------------
-# Show set system paths
-#-------------------------------------------------------------
-alias paths='echo -e ${PATH//:/\\n}'
-
-#-------------------------------------------------------------
-# Listing the directory structure | pretty
-#-------------------------------------------------------------
+## Just directory listings
 alias ll='ls -lhG'
 alias la='ls -alhG'
-alias lx='ls -lB'           #  Sort by extension.
-alias lk='ls -lSr'          #  Sort by size, biggest last.
-alias lt='ls -ltr'          #  Sort by date, most recent last.
-alias lc='ls -ltcr'         #  Sort by/show change time,most recent last.
-alias lu='ls -ltur'         #  Sort by/show access time,most recent last.
+alias lx='ls -lB'    #  Sort by extension.
+alias lk='ls -lSr'   #  Sort by size, biggest last.
+alias lt='ls -ltr'   #  Sort by date, most recent last.
+alias lc='ls -ltcr'  #  Sort by/show change time,most recent last.
+alias lu='ls -ltur'  #  Sort by/show access time,most recent last.
 
-list(){
-    ls -la | grep "^d" && ls -la | grep "^-" && ls -la | grep "^l"
+## Function: Show date and time stuff
+now() {
+    echo "------------------"
+    echo -e "Day  : $(date '+%A')"
+    echo -e "Date : $(date '+%Y-%m-%d')"
+    echo -e "Time : $(date '+%r')"
+    echo "------------------"
 }
 
-#-------------------------------------------------------------
-# Extraction
-#-------------------------------------------------------------
-extract(){
+## Get size of folder: sizeme some-folder-name
+sizeme() {
+  printf '%-6s %-8s %-12s %s\n' "PERMS" "SIZE" "MODIFIED" "FILENAME"
+  for f in "$@"; do
+    perm=$(stat -c '%a' "$f")
+    size=$(stat -c '%s' "$f" | numfmt --to=iec --suffix=B)
+    date=$(stat -c '%y' "$f" | cut -d' ' -f1)
+    printf '0%-5s %-8s %-12s %s\n' "$perm" "$size" "$date" "$f"
+  done
+}
+
+## Function: Cleanup basic ls command
+#list() { ls -la | grep "^d" && ls -la | grep "^-" && ls -la | grep "^l"; }
+
+## Function: Backup a file with timestamp [bak myfile.conf]
+makebak() { cp "$1" "$1.bak.$(date +%Y%m%d-%H%M%S)"; }
+
+## Function: Compress to tar.gz
+maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/"; }
+
+## Function: Compress to bz2
+makebz2() { tar cvjSf "${1%%/}.tar.bz2" "${1%%/}/"; }
+
+## Function: Compress to zip
+makezip() { zip -r "${1%%/}.zip" "$1"; }
+
+## Function: Extract archive
+extract() {
     if [ -f "$1" ]
         then
         case $1 in
@@ -56,7 +61,7 @@ extract(){
             *.tgz)      tar xvzf "$1"     ;;
             *.zip)      unzip "$1"        ;;
             *.Z)        uncompress "$1"   ;;
-            #*.7z)       p7zip x "$1"         ;;
+            *.7z)       p7zip x "$1"      ;;
             *)          echo "'$1' cannot be extracted via >extract<" ;;
         esac
     else
@@ -64,120 +69,71 @@ extract(){
     fi
 }
 
-#-------------------------------------------------------------
-# Compression
-#-------------------------------------------------------------
-# Creates an archive (*.tar.gz) from given directory.
-mkgz(){
-    tar cvzf "${1%%/}.tar.gz" "${1%%/}/"
+## Function: backup
+backup() {
+    local src dest backup_dir safe_name timestamp
+    backup_dir="/backups"
+
+    if [[ -z "$1" ]]; then
+        echo "Usage: backup <path>" >&2
+        return 1
+    fi
+
+    # Resolve to a canonical absolute path (also errors out clearly if it doesn't exist)
+    src="$(realpath -e "$1")" || { echo "backup: path not found: $1" >&2; return 1; }
+
+    mkdir -p "$backup_dir" || return 1
+
+    # Turn the absolute path into a safe, flat filename (/etc/nginx -> etc_nginx)
+    safe_name="${src//\//_}"
+    safe_name="${safe_name#_}"
+    timestamp="$(date "+%Y%m%d-%H.%M.%S")"
+    dest="${backup_dir}/${safe_name}.${timestamp}.tar.gz"
+
+    echo "Backing up '$src' -> '$dest'"
+    tar -cPf - "$src" | gzip -9 > "$dest"
+
+    # Check BOTH stages of the pipe, not just gzip's exit status
+    if [[ ${PIPESTATUS[0]} -ne 0 || ${PIPESTATUS[1]} -ne 0 ]]; then
+        echo "backup: FAILED for $src" >&2
+        rm -f "$dest"
+        return 1
+    fi
+
+    echo "Done: $dest ($(du -h "$dest" | cut -f1))"
 }
 
-# Creates an archive (*.tar.bz2) from a given directory
-mkbz2(){
-    tar cvjSf "${1%%/}.tar.bz2" "${1%%/}/"
+## Function: restore
+restore() {
+    local archive="$1"
+    local target_dir="$2"
+
+    if [[ -z "$archive" || ! -f "$archive" ]]; then
+        echo "Usage: restore <backup-file.tar.gz> [alternate-target-dir]" >&2
+        return 1
+    fi
+
+    echo "Archive contents:"
+    tar -tzf "$archive" | sed 's/^/  /'
+    echo
+
+    if [[ -n "$target_dir" ]]; then
+        mkdir -p "$target_dir" || return 1
+        read -rp "Restore into '$target_dir' (paths made relative)? [y/N] " confirm
+        [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; return 1; }
+        # Omitting -P here makes tar strip the leading '/', so absolute
+        # paths land relative to -C instead of overwriting the original.
+        tar -xzf "$archive" -C "$target_dir"
+    else
+        read -rp "Restore to ORIGINAL location(s) shown above? [y/N] " confirm
+        [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; return 1; }
+        tar -xPzf "$archive"
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        echo "Restore complete."
+    else
+        echo "restore: FAILED (exit $?)" >&2
+        return 1
+    fi
 }
-
-# Create a ZIP archive of a file or folder.
-makezip(){
-    zip -r "${1%%/}.zip" "$1"
-}
-
-# Make your directories and files access rights sane.
-sanitize(){
-    chmod -R u=rwX,g=rX,o= "$@"
-}
-
-#-------------------------------------------------------------
-# Backup anything you send as an argument
-#-------------------------------------------------------------
-backup(){
-    tar -cPf - "$1" | gzip -9 - > /data/backups/"$1"."$(date "+%Y%m%d-%H.%M.%S")".tar.gz
-}
-
-#-------------------------------------------------------------
-# Date and time incase Terminal is full screen.
-#-------------------------------------------------------------
-now(){
-    echo "------------------"
-    echo -e "${Yellow}Day  : ${Red}  $(date '+%A')"
-    echo -e "${Yellow}Date : ${White}  $(date '+%Y-%m-%d')"
-    echo -e "${Yellow}Time : ${Green}  $(date '+%r')"
-    echo "------------------"
-}
-
-#-------------------------------------------------------------
-# Show free space for sda2
-#-------------------------------------------------------------
-space(){
-    free=`df -h | grep -i "/dev/sda2" | awk {'print $5'}`
-    echo "Freespace:  ${free}"
-}
-
-#-------------------------------------------------------------
-# Processes and services
-#-------------------------------------------------------------
-ii(){
-    # Variables
-    os_var_1=`lsb_release -d | awk '{print $2,$3,$4}'`
-    os_var_2=`lsb_release -c | awk '{print $2}'`
-    uptyme=`uptime | awk '{print $2,$3,$4,$1 " | " $5,$6}'`
-    users=`w -h | awk '{print $1,$2,$3}'`
-    # Begin
-    echo -e "${Red}You are logged on: $NC"
-    hostname
-    echo " "
-    echo -e "${Red}OS Version $NC"
-    echo $os_var_1 $os_var_2
-    echo " "
-    echo -e "${Red}Current date $NC"
-    date
-    echo " "
-    echo -e "${Red}Stats $NC"
-    echo $uptyme
-    echo " "
-    echo -e "${Red}Users logged on $NC"
-    w -h
-    echo " "
-}
-
-#-------------------------------------------------------------
-# Show open ports x3
-#-------------------------------------------------------------
-whatsopen(){
-    # Variables
-
-    free=`df -h | grep -i "/dev/sda2" | awk {'print $5'}`
-    echo "Freespace:  ${free}"
-}
-
-#-------------------------------------------------------------
-# Change the text color
-#-------------------------------------------------------------
-Black='\033[0;30m'        # Black
-Red='\033[0;31m'          # Red
-Green='\033[0;32m'        # Green
-Yellow='\033[0;33m'       # Yellow
-Blue='\033[0;34m'         # Blue
-Purple='\033[0;35m'       # Purple
-Cyan='\033[0;36m'         # Cyan
-White='\033[0;37m'        # White
-# Bold
-BBlack='\033[1;30m'       # Black
-BRed='\033[1;31m'         # Red
-BGreen='\033[1;32m'       # Green
-BYellow='\033[1;33m'      # Yellow
-BBlue='\033[1;34m'        # Blue
-BPurple='\033[1;35m'      # Purple
-BCyan='\033[1;36m'        # Cyan
-BWhite='\033[1;37m'       # White
-# Background
-On_Black='\033[40m'       # Black
-On_Red='\033[41m'         # Red
-On_Green='\033[42m'       # Green
-On_Yellow='\033[43m'      # Yellow
-On_Blue='\033[44m'        # Blue
-On_Purple='\033[45m'      # Purple
-On_Cyan='\033[46m'        # Cyan
-On_White='\033[47m'       # White
-# Reset to default
-NC='\033[0m'            # Color Reset
