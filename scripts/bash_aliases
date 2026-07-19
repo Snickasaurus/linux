@@ -20,7 +20,7 @@ now() {
     echo "------------------"
 }
 
-## Show only active (non-comment, non-blank) config lines
+## Function: Show only active (non-comment, non-blank) config lines
 showconf() {
     if [ -z "$1" ]; then
         echo "Usage: conf <file>"
@@ -29,7 +29,7 @@ showconf() {
     grep --color=auto -vn -E '^\s*#|^\s*$' "$1"
 }
 
-## Get size of folder: sizeme some-folder-name
+## Function: Get size of folder: sizeme some-folder-name
 sizeme() {
   printf '%-6s %-8s %-12s %s\n' "PERMS" "SIZE" "MODIFIED" "FILENAME"
   for f in "$@"; do
